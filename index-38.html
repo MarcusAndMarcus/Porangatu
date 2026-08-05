@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARGOS Porangatu — rede elétrica e conectividade agro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --terra:#17100C;--terra2:#1F1712;--terra3:#2A201A;--linha:#3D2E24;--linha2:#54402F;
+  --osso:#EDE3D6;--osso-d:#A69582;--osso-dd:#6E6154;
+  --fosforo:#79C2D0;--fosforo-d:#2E5C66;--fibra:#C77DBB;--erb:#C9A227;
+  --adeq:#6FBF73;--prec:#E3A130;--crit:#E05A4F;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;--sans:'IBM Plex Sans',system-ui,sans-serif;
+  --cond:'Barlow Condensed',var(--sans);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--terra);color:var(--osso);font-family:var(--sans);font-size:14px;
+  line-height:1.5;padding-bottom:44px;
+  background-image:linear-gradient(var(--linha) .5px,transparent .5px),linear-gradient(90deg,var(--linha) .5px,transparent .5px);
+  background-size:44px 44px;background-position:-1px -1px}
+.wrap{max-width:1420px;margin:0 auto;padding:0 14px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.eyebrow{font-family:var(--cond);text-transform:uppercase;letter-spacing:.16em;font-size:11px;font-weight:600;color:var(--osso-dd)}
+header{border-bottom:1px solid var(--linha2);background:linear-gradient(180deg,#1B130E,#17100C);padding:16px 0 0;margin-bottom:16px}
+.hd{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;padding-bottom:12px}
+h1{font-family:var(--cond);font-weight:600;font-size:29px;line-height:1}
+h1 span{color:var(--fosforo)}
+.sub{font-size:12.5px;color:var(--osso-d);margin-top:4px;max-width:70ch}
+.badge{font-family:var(--mono);font-size:10.5px;border:1px solid var(--linha2);padding:3px 8px;color:var(--osso-dd);white-space:nowrap}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));border-top:1px solid var(--linha2);border-bottom:1px solid var(--linha2);background:#140E0A}
+.ro{padding:8px 11px;border-right:1px solid var(--linha)}
+.ro b{display:block;font-family:var(--mono);font-size:18px;font-weight:500;line-height:1.2}
+.ro i{display:block;font-family:var(--cond);font-style:normal;text-transform:uppercase;letter-spacing:.13em;font-size:9.5px;color:var(--osso-dd);margin-top:2px}
+.grid{display:grid;grid-template-columns:288px 1fr;gap:13px}
+@media(max-width:960px){.grid{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:13px;min-width:0}
+.panel{background:var(--terra2);border:1px solid var(--linha)}
+.panel>h2{font-family:var(--cond);text-transform:uppercase;letter-spacing:.14em;font-size:11.5px;font-weight:600;
+  color:var(--osso-d);padding:8px 12px;border-bottom:1px solid var(--linha);display:flex;justify-content:space-between;gap:8px}
+.panel>h2 em{font-style:normal;font-family:var(--mono);font-size:10px;color:var(--osso-dd);letter-spacing:0}
+.clu{border-bottom:2px solid var(--linha2)}
+.clu-h{font-family:var(--cond);text-transform:uppercase;letter-spacing:.15em;font-size:10.5px;padding:7px 12px 2px;display:flex;justify-content:space-between}
+.dom-h{font-family:var(--cond);text-transform:uppercase;letter-spacing:.14em;font-size:9.5px;color:var(--fosforo-d);padding:6px 12px 2px}
+.cell{display:grid;grid-template-columns:32px 1fr auto;gap:7px;align-items:baseline;padding:3px 12px 4px}
+.cell:hover{background:var(--terra3)}
+.cell code{font-family:var(--mono);font-size:9.5px;color:var(--osso-dd)}
+.cell .nm{font-size:11.5px}
+.cell .vl{font-family:var(--mono);font-size:11.5px;font-weight:500;text-align:right}
+.cell .bar{grid-column:2/4;height:2px;background:var(--linha);margin-top:1px}
+.cell .bar i{display:block;height:100%;background:var(--fosforo);transition:width .2s}
+.clu.agro .cell .bar i{background:var(--fibra)}
+svg{display:block;width:100%;height:auto}
+#mapbox{position:relative;width:100%;height:0;padding-bottom:62%;overflow:hidden;background:#0F0B08;touch-action:none;cursor:grab}
+#mapbox.arrastando{cursor:grabbing}
+#tiles{position:absolute;inset:0;overflow:hidden}
+#tiles img{position:absolute;width:256px;height:256px;user-select:none;-webkit-user-drag:none;
+  filter:saturate(.55) brightness(.62) contrast(1.08)}
+#tiles.satelite img{filter:saturate(.72) brightness(.68) contrast(1.05)}
+#map{position:absolute;inset:0;width:100%;height:100%}
+.mapctl{position:absolute;top:9px;right:9px;display:flex;flex-direction:column;gap:5px;z-index:3}
+.mapctl .lin{display:flex;gap:4px}
+.mapctl button{font-family:var(--cond);text-transform:uppercase;letter-spacing:.1em;font-size:9.5px;
+  background:rgba(23,16,12,.88);color:var(--osso-d);border:1px solid var(--linha2);padding:4px 7px;cursor:pointer;backdrop-filter:blur(3px)}
+.mapctl button[aria-pressed=true]{background:var(--fosforo);color:#0E1416;border-color:var(--fosforo)}
+.mapctl button:focus-visible{outline:1px solid var(--fosforo);outline-offset:2px}
+.attr{position:absolute;bottom:5px;left:8px;font-family:var(--mono);font-size:8.5px;color:var(--osso-dd);
+  background:rgba(23,16,12,.7);padding:2px 6px;z-index:3;pointer-events:none}
+.leg{display:flex;flex-wrap:wrap;gap:12px;padding:7px 12px;border-top:1px solid var(--linha);font-family:var(--mono);font-size:9.5px;color:var(--osso-dd)}
+.leg s{text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr))}
+.c{padding:9px 12px;border-right:1px solid var(--linha);border-bottom:1px solid var(--linha)}
+.c label{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--cond);
+  text-transform:uppercase;letter-spacing:.12em;font-size:9.5px;color:var(--osso-dd);margin-bottom:6px}
+.c label b{font-family:var(--mono);font-size:12px;color:var(--osso);letter-spacing:0;font-weight:500}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:2px;background:var(--linha2);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;background:var(--fosforo);cursor:pointer;transform:rotate(45deg)}
+input[type=range]::-moz-range-thumb{width:13px;height:13px;background:var(--fosforo);border:none;cursor:pointer}
+input[type=range]:focus-visible{outline:1px solid var(--fosforo);outline-offset:4px}
+.sw{display:flex;gap:5px;flex-wrap:wrap}
+.sw button{font-family:var(--cond);text-transform:uppercase;letter-spacing:.1em;font-size:10px;background:transparent;
+  color:var(--osso-dd);border:1px solid var(--linha2);padding:5px 8px;cursor:pointer}
+.sw button[aria-pressed=true]{background:var(--fosforo);color:#0E1416;border-color:var(--fosforo)}
+.sw button.danger[aria-pressed=true]{background:var(--crit);color:#1A0A08;border-color:var(--crit)}
+.sw button:focus-visible{outline:1px solid var(--fosforo);outline-offset:2px}
+.pvrow{display:grid;grid-template-columns:14px 60px 1fr auto;gap:8px;align-items:baseline;padding:5px 12px;border-bottom:1px solid var(--linha);font-size:11.5px}
+.pvrow .st{font-family:var(--mono);font-size:11px;font-weight:600}
+.pvrow .cm{font-family:var(--cond);text-transform:uppercase;letter-spacing:.1em;font-size:9px;color:var(--osso-dd)}
+.pvrow .ds{color:var(--osso-d)}
+.pvrow .vr{font-family:var(--mono);font-size:11px;text-align:right;white-space:nowrap}
+.ok{color:var(--adeq)}.wr{color:var(--prec)}.er{color:var(--crit)}
+#log{max-height:190px;overflow-y:auto;font-family:var(--mono);font-size:10px;padding:6px 12px}
+#log div{padding:2px 0;border-bottom:1px solid #241B15;color:var(--osso-dd);word-break:break-all}
+#log b{color:var(--fosforo);font-weight:500}
+#log .agro b{color:var(--fibra)}
+#log .conv b{color:var(--adeq)}
+footer{margin-top:20px;padding-top:13px;border-top:1px solid var(--linha);font-size:11.5px;color:var(--osso-dd);line-height:1.65}
+footer b{color:var(--osso-d);font-weight:500}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+ <div class="wrap">
+  <div class="hd">
+   <div>
+    <div class="eyebrow">ARGOS · 2 clusters · 24 células · protocolo URB1</div>
+    <h1>Porangatu <span>rede elétrica × conectividade agro</span></h1>
+    <p class="sub">A fibra do agro sobe no poste da distribuidora. Mesmo corredor, mesma falha. O cluster REDE resolve o fluxo de potência; o cluster AGRO resolve backhaul e telemetria; os dois trocam telegramas até o conjunto de ativos afetados estabilizar.</p>
+   </div>
+   <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+    <div class="badge">IBGE 5218003 · 13°26′S 49°09′W</div>
+    <div class="badge" id="bdg">—</div>
+   </div>
+  </div>
+ </div>
+ <div class="wrap" style="padding:0"><div class="readout" id="ro"></div></div>
+</header>
+
+<div class="wrap">
+ <div class="grid">
+  <section class="panel"><h2>Malha <em id="clk">—</em></h2><div id="cells"></div></section>
+  <div class="col">
+   <section class="panel">
+    <h2>Duas camadas sobre os mesmos postes <em>13,8 kV · fibra · ERB</em></h2>
+    <div id="mapbox">
+      <div id="tiles"></div>
+      <svg id="map" role="img" aria-label="Mapa das camadas elétrica e de conectividade"></svg>
+      <div class="mapctl">
+        <div class="lin">
+          <button id="bs_escuro"   aria-pressed="true">Escuro</button>
+          <button id="bs_satelite" aria-pressed="false">Satélite</button>
+          <button id="bs_nenhum"   aria-pressed="false">Sem base</button>
+        </div>
+        <div class="lin" style="justify-content:flex-end">
+          <button id="z_mais" aria-label="Aproximar">+</button>
+          <button id="z_menos" aria-label="Afastar">−</button>
+          <button id="z_fit">Enquadrar</button>
+        </div>
+      </div>
+      <div class="attr" id="attr"></div>
+    </div>
+    <div class="leg">
+     <s><i class="dot" style="background:var(--adeq)"></i>≥0,93 pu</s>
+     <s><i class="dot" style="background:var(--prec)"></i>0,90–0,93</s>
+     <s><i class="dot" style="background:var(--crit)"></i>&lt;0,90</s>
+     <s style="color:var(--fibra)">━ fibra · ⬢ PoP</s>
+     <s style="color:var(--erb)">△ ERB · ○ raio</s>
+     <s style="color:var(--osso-dd)">◦ pivô central</s>
+    </div>
+   </section>
+   <section class="panel">
+    <h2>Dia completo <em>estado de carga das baterias hora a hora</em></h2>
+    <svg id="dia" viewBox="0 0 900 300" role="img" aria-label="Linha do tempo de 24 horas"></svg>
+   </section>
+   <section class="panel"><h2>Cenário</h2><div class="ctl" id="ctl"></div></section>
+   <section class="panel"><h2>Polo V — verificação determinística</h2><div id="pv"></div></section>
+   <section class="panel"><h2>Telegramas URB1 <em id="jac">—</em></h2><div id="log"></div></section>
+  </div>
+ </div>
+ <footer>
+  <b>Fronteira.</b> Nenhuma célula calcula fluxo de potência. O solver decide tensão, o Polo V decide conformidade, as células quantificam variáveis e trocam telegramas.<br>
+  <b>Acoplamento.</b> REDE→AGRO: barra abaixo de 0,90 pu tira o retificador do PoP da faixa e joga o site para bateria. AGRO→REDE: pivô sem telemetria perde o agendamento remoto e volta ao temporizador local, deixando de fugir do horário de ponta.<br>
+  <b>Dados.</b> Traçado sintético com esquema de campos da BDGD. Não é a rede real da Equatorial Goiás.
+ </footer>
+</div>
+
+<script>
+"use strict";
+const COR={adequada:"#6FBF73",precaria:"#E3A130",critica:"#E05A4F"};
+const MES=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+let TOPO=null, R=null, DIA=null;
+const S={hora:19,mes:8,gdMW:6,cresc:1,seca:1,safra:1,n1:false,reg:true,cap:true,satelite:true,
+         duracaoH:8,inicioH:2};
+const classificar=v=>(v>1.05||v<0.90)?"critica":(v<0.93?"precaria":"adequada");
+const $=i=>document.getElementById(i);
+
+const CTLS=[
+ {k:"hora",min:0,max:23,step:1,rot:"Hora",fmt:v=>String(v).padStart(2,"0")+":00"},
+ {k:"mes",min:1,max:12,step:1,rot:"Mês",fmt:v=>MES[v-1]},
+ {k:"gdMW",min:0,max:30,step:0.5,rot:"GD instalada",fmt:v=>v.toFixed(1)+" MWp"},
+ {k:"cresc",min:1,max:1.6,step:0.02,rot:"Crescimento",fmt:v=>"+"+((v-1)*100).toFixed(0)+"%"},
+ {k:"inicioH",min:0,max:23,step:1,rot:"Início do distúrbio",fmt:v=>String(v).padStart(2,"0")+"h"},
+ {k:"duracaoH",min:0,max:24,step:1,rot:"Duração",fmt:v=>v+" h"}
+];
+
+function montarCtl(){
+ $("ctl").innerHTML=CTLS.map(c=>`<div class="c"><label>${c.rot}<b id="lb_${c.k}">${c.fmt(S[c.k])}</b></label>
+   <input type="range" id="in_${c.k}" min="${c.min}" max="${c.max}" step="${c.step}" value="${S[c.k]}" aria-label="${c.rot}"></div>`).join("")
+  +`<div class="c"><label>Chaves</label><div class="sw">
+     <button id="sw_seca" aria-pressed="${S.seca===1}">Seca</button>
+     <button id="sw_reg" aria-pressed="${S.reg}">Regulador</button>
+     <button id="sw_cap" aria-pressed="${S.cap}">Capacitor</button>
+     <button id="sw_satelite" aria-pressed="${S.satelite}">Satélite</button>
+     <button id="sw_n1" class="danger" aria-pressed="${S.n1}">Contingência N-1</button></div></div>`;
+ CTLS.forEach(c=>$("in_"+c.k).addEventListener("input",e=>{
+   S[c.k]=parseFloat(e.target.value);$("lb_"+c.k).textContent=c.fmt(S[c.k]);rodar();}));
+ [["sw_seca","seca"],["sw_reg","reg"],["sw_cap","cap"],["sw_satelite","satelite"],["sw_n1","n1"]]
+  .forEach(([id,k])=>$(id).addEventListener("click",e=>{
+    S[k]=(k==="seca")?(S.seca===1?0:1):!S[k];
+    e.target.setAttribute("aria-pressed",String(S[k]===1||S[k]===true));rodar();}));
+}
+
+async function rodar(){
+ const [a,b]=await Promise.all([
+  fetch("/api/simular",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(S)}).then(r=>r.json()),
+  fetch("/api/dia",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(S)}).then(r=>r.json())
+ ]);
+ R=a;DIA=b;desenhar();
+}
+
+/* ---------------- render ---------------- */
+function desenhar(){
+ const s=R.solver, vmin=Math.min(...s.V.slice(1));
+ const popsMortos=R.pops.filter(p=>!p.vivo).length;
+ $("ro").innerHTML=[
+  ["Demanda",R.cargaMW.toFixed(2)+" MW",""],
+  ["Geração dist.",R.gdMW.toFixed(2)+" MW","color:var(--erb)"],
+  ["Perdas",R.perdasPct.toFixed(2)+"%",""],
+  ["Pior tensão",vmin.toFixed(4)+" pu","color:"+COR[classificar(vmin)]],
+  ["Trafo 40 MVA",R.carregPct.toFixed(1)+"%","color:"+(R.carregPct>100?COR.critica:"inherit")],
+  ["PoPs fora",popsMortos+" / "+R.pops.length,"color:"+(popsMortos?COR.critica:COR.adequada)],
+  ["Área c/ telemetria",(R.haConectada).toFixed(0)+" ha","color:var(--fibra)"],
+  ["Latência",R.latMedia.toFixed(1)+" ms",""]
+ ].map(([i,b,st])=>`<div class="ro"><b style="${st}">${b}</b><i>${i}</i></div>`).join("");
+ $("bdg").textContent=`${s.iteracoes} iter · ${R.rodadas} rodadas · Jaccard ${R.jaccard.toFixed(3)}`;
+ $("bdg").style.color=R.convergiu?"var(--osso-dd)":"var(--crit)";
+ $("clk").textContent=String(S.hora).padStart(2,"0")+":00 · "+MES[S.mes-1];
+ $("jac").textContent=`${R.telegramas.length} quadros · ${R.rodadas} rodadas`;
+
+ const esc={C01:1.4,C02:1.2,C03:1.6,C04:5,C05:30,C06:1,C07:100,C08:10,C09:120,C10:1.1,C11:2,
+            C12:12,C13:1,C14:1,C15:1.6,C16:1.06,
+            G01:60,G02:7,G03:8,G04:3,G05:100,G06:60,G07:26,G08:3000};
+ const bloco=(titulo,cor,cs,cl)=>{
+  const doms=[...new Set(cs.map(c=>c.dom))];
+  return `<div class="clu ${cl}"><div class="clu-h"><span style="color:${cor}">${titulo}</span>
+    <span style="color:var(--osso-dd);font-family:var(--mono);font-size:10px">${cs.length} células</span></div>`
+   +doms.map(d=>`<div class="dom-h">${d}</div>`+cs.filter(c=>c.dom===d).map(c=>{
+     const pct=Math.max(0,Math.min(100,100*c.v/(esc[c.id]||1)));
+     const dec=Math.abs(c.v)>=100?0:(Math.abs(c.v)>=10?1:3);
+     return `<div class="cell"><code>${c.id}</code><span class="nm">${c.nome}</span>
+       <span class="vl">${c.v.toFixed(dec)} <span style="color:var(--osso-dd)">${c.un}</span></span>
+       <div class="bar"><i style="width:${pct}%"></i></div></div>`;}).join("")).join("")+`</div>`;
+ };
+ $("cells").innerHTML=bloco("Cluster REDE","var(--fosforo)",R.celulasRede,"rede")
+                     +bloco("Cluster AGRO","var(--fibra)",R.celulasAgro,"agro");
+
+ $("pv").innerHTML=R.polov.linhas.map(l=>
+  `<div class="pvrow"><span class="st ${l.st}">${l.st==="ok"?"✓":(l.st==="wr"?"!":"✕")}</span>
+   <span class="cm">${l.camada}</span><span class="ds">${l.ds}</span>
+   <span class="vr ${l.st}">${l.vr}</span></div>`).join("");
+
+ $("log").innerHTML=R.telegramas.map(t=>{
+  if(t.jaccard!==undefined) return `<div class="conv"><b>CONVERGENCIA</b> rodada ${t.rodada} · Jaccard ${t.jaccard.toFixed(4)} · ${t.estabilizou?"estabilizou":"nova rodada"}</div>`;
+  const agro=t.tipo===0x21;
+  return `<div class="${agro?"agro":""}"><b>${agro?"AGRO→REDE":"REDE→AGRO"}</b> seq ${t.seq} · ${t.bytes} B · ${t.hex}…<br>${JSON.stringify(t.objeto).slice(0,150)}</div>`;
+ }).join("");
+
+ mapa();linhaDoTempo();
+}
+
+/* ---------------- base cartografica: Web Mercator sem biblioteca ----------------
+   Projecao esferica de Mercator, a mesma dos tiles z/x/y. O overlay SVG usa
+   exatamente esta funcao, entao alinha com a imagem em qualquer zoom.        */
+const TAM=256;
+const BASES={
+ escuro  :{url:(z,x,y)=>`https://a.basemaps.cartocdn.com/dark_all/${z}/${x}/${y}.png`,
+           attr:"© OpenStreetMap · © CARTO", zmax:19, cls:""},
+ satelite:{url:(z,x,y)=>`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`,
+           attr:"Imagery © Esri, Maxar, Earthstar Geographics", zmax:18, cls:"satelite"},
+ nenhum  :{url:null, attr:"", zmax:19, cls:""}
+};
+const VISTA={z:12,cx:0,cy:0,base:"escuro",pronto:false};
+
+function mundo(lat,lon,z){
+ const s=TAM*Math.pow(2,z);
+ const sy=Math.min(0.9999,Math.max(-0.9999,Math.sin(lat*Math.PI/180)));
+ return { x:(lon+180)/360*s, y:(0.5-Math.log((1+sy)/(1-sy))/(4*Math.PI))*s };
+}
+function dims(){const b=document.getElementById("mapbox");return {W:b.clientWidth||900,H:b.clientHeight||560};}
+
+function enquadrar(){
+ const {W,H}=dims();
+ const pts=TOPO.barras.map(b=>b.pos).concat(TOPO.pivos.map(p=>p.pos));
+ const la=pts.map(p=>p[0]),lo=pts.map(p=>p[1]);
+ const la0=Math.min(...la),la1=Math.max(...la),lo0=Math.min(...lo),lo1=Math.max(...lo);
+ let z=BASES[VISTA.base].zmax;
+ for(;z>2;z--){
+  const a=mundo(la1,lo0,z),b=mundo(la0,lo1,z);
+  if((b.x-a.x)<=W-70 && (b.y-a.y)<=H-70) break;
+ }
+ VISTA.z=z;
+ const c=mundo((la0+la1)/2,(lo0+lo1)/2,z);
+ VISTA.cx=c.x; VISTA.cy=c.y; VISTA.pronto=true;
+}
+
+function desenharTiles(){
+ const cont=document.getElementById("tiles");
+ const base=BASES[VISTA.base];
+ cont.className=base.cls;
+ document.getElementById("attr").textContent=base.attr;
+ if(!base.url){cont.innerHTML="";return;}
+ const {W,H}=dims(), z=VISTA.z, n=Math.pow(2,z);
+ const ox=VISTA.cx-W/2, oy=VISTA.cy-H/2;
+ const tx0=Math.floor(ox/TAM), tx1=Math.floor((ox+W)/TAM);
+ const ty0=Math.max(0,Math.floor(oy/TAM)), ty1=Math.min(n-1,Math.floor((oy+H)/TAM));
+ let html="";
+ for(let ty=ty0;ty<=ty1;ty++)for(let tx=tx0;tx<=tx1;tx++){
+  const wx=((tx%n)+n)%n;
+  html+=`<img src="${base.url(z,wx,ty)}" alt="" loading="lazy" draggable="false"
+    style="left:${(tx*TAM-ox).toFixed(0)}px;top:${(ty*TAM-oy).toFixed(0)}px">`;
+ }
+ cont.innerHTML=html;
+}
+
+function mapa(){
+ if(!VISTA.pronto)enquadrar();
+ desenharTiles();
+ const {W,H}=dims(), z=VISTA.z;
+ const ox=VISTA.cx-W/2, oy=VISTA.cy-H/2;
+ document.getElementById("map").setAttribute("viewBox",`0 0 ${W} ${H}`);
+ const proj=p=>{const m=mundo(p[0],p[1],z);return {x:m.x-ox,y:m.y-oy};};
+ const X=p=>proj(p).x, Y=p=>proj(p).y;
+ // metros por pixel no paralelo local, para os raios de ERB e a escala grafica
+ const mppx=156543.03392*Math.cos(TOPO.se.lat*Math.PI/180)/Math.pow(2,z);
+ const kmPx=1000/mppx;
+ const PAD=46;
+ const pop=id=>TOPO.pops.find(p=>p.id===id);
+ const estPop=id=>R.pops.find(p=>p.id===id);
+ let s=`<defs><filter id="gl"><feGaussianBlur stdDeviation="2.2" result="b"/>
+  <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+
+ // raios de ERB
+ TOPO.erbs.forEach(er=>{const st=R.erbs.find(x=>x.id===er.id);
+  s+=`<circle cx="${X(er.pos).toFixed(1)}" cy="${Y(er.pos).toFixed(1)}" r="${(er.raioKm*kmPx).toFixed(1)}"
+   fill="${st.vivo?"#C9A227":"#E05A4F"}" fill-opacity=".045" stroke="${st.vivo?"#C9A227":"#E05A4F"}"
+   stroke-opacity=".28" stroke-width=".9" stroke-dasharray="4 4"/>`;});
+
+ // troncos de MT
+ TOPO.ctmt.forEach(al=>{
+  const bs=TOPO.barras.filter(b=>b.ctmt===al.id).sort((a,b)=>a.km-b.km);
+  const d=[TOPO.barras[0],...bs].map((b,i)=>(i?"L":"M")+X(b.pos).toFixed(1)+" "+Y(b.pos).toFixed(1)).join(" ");
+  s+=`<path d="${d}" fill="none" stroke="#2E5C66" stroke-width="1.5" opacity=".7"/>`;
+  const u=bs[bs.length-1];
+  s+=`<text x="${X(u.pos)+6}" y="${Y(u.pos)+3}" fill="#6E6154" font-family="Barlow Condensed" font-size="11.5" letter-spacing="1">${al.id}</text>`;});
+
+ // pivos
+ TOPO.pivos.forEach(p=>{const t=R.pivos.find(x=>x.id===p.id);
+  const rM=Math.sqrt(p.areaHa*10000/Math.PI);           // raio real do pivo central, em metros
+  const r=Math.max(2.2,rM/mppx);
+  s+=`<circle cx="${X(p.pos).toFixed(1)}" cy="${Y(p.pos).toFixed(1)}" r="${r.toFixed(1)}"
+   fill="${t.telemetria?"none":"#E05A4F"}" fill-opacity=".10"
+   stroke="${t.telemetria?(t.viaFibra?"#C77DBB":"#C9A227"):"#E05A4F"}"
+   stroke-width="${t.telemetria?1:1.6}" opacity="${t.telemetria?.6:.95}">
+   <title>${p.id} · ${p.areaHa} ha · raio ${rM.toFixed(0)} m · ${t.telemetria?(t.viaFibra?"fibra":"ERB"):"SEM TELEMETRIA"}</title></circle>`;});
+
+ // fibra
+ TOPO.pops.filter(p=>p.montante).forEach(p=>{
+  const up=pop(p.montante),st=estPop(p.id);
+  s+=`<path d="M${X(up.pos).toFixed(1)} ${Y(up.pos).toFixed(1)} L${X(p.pos).toFixed(1)} ${Y(p.pos).toFixed(1)}"
+   stroke="${st.vivo?(st.satelite?"#C9A227":"#C77DBB"):"#E05A4F"}" stroke-width="1.9"
+   stroke-dasharray="${st.vivo?"":"5 4"}" fill="none" opacity=".85"/>`;});
+
+ // barras
+ TOPO.barras.forEach((b,i)=>{if(i===0)return;
+  const c=COR[classificar(R.solver.V[i])];
+  s+=`<circle cx="${X(b.pos).toFixed(1)}" cy="${Y(b.pos).toFixed(1)}" r="${(2.2+Math.sqrt(R.cargas[i])/26).toFixed(2)}"
+   fill="${c}" opacity=".9"><title>${b.id} · ${R.solver.V[i].toFixed(4)} pu · ${R.cargas[i]} kVA</title></circle>`;
+  if(b.reg)s+=`<rect x="${(X(b.pos)-4.5).toFixed(1)}" y="${(Y(b.pos)-4.5).toFixed(1)}" width="9" height="9"
+   fill="none" stroke="#79C2D0" stroke-width="1.1" transform="rotate(45 ${X(b.pos).toFixed(1)} ${Y(b.pos).toFixed(1)})"/>`;});
+
+ // ERBs
+ TOPO.erbs.forEach(er=>{const st=R.erbs.find(x=>x.id===er.id),c=st.vivo?"#C9A227":"#E05A4F";
+  const x=X(er.pos),y=Y(er.pos);
+  s+=`<path d="M${x.toFixed(1)} ${(y-7).toFixed(1)} L${(x+6).toFixed(1)} ${(y+4).toFixed(1)} L${(x-6).toFixed(1)} ${(y+4).toFixed(1)} Z"
+   fill="none" stroke="${c}" stroke-width="1.6"><title>${er.id} · ${er.tec} · SoC ${(st.soc*100).toFixed(0)}%</title></path>`;});
+
+ // PoPs
+ TOPO.pops.forEach(p=>{const st=estPop(p.id),c=st.vivo?(st.satelite?"#C9A227":"#C77DBB"):"#E05A4F";
+  const x=X(p.pos),y=Y(p.pos),r=5.5;
+  const hex=[...Array(6)].map((_,k)=>{const a=Math.PI/6+k*Math.PI/3;
+   return `${(x+r*Math.cos(a)).toFixed(1)},${(y+r*Math.sin(a)).toFixed(1)}`;}).join(" ");
+  s+=`<polygon points="${hex}" fill="${st.vivo?"#1F1712":c}" stroke="${c}" stroke-width="1.6">
+   <title>${p.id} — ${p.nome} · SoC ${(st.soc*100).toFixed(0)}%${st.emBateria?" · EM BATERIA":""}${st.vivo?"":" · FORA"}</title></polygon>`;
+  if(st.emBateria)s+=`<rect x="${(x-6).toFixed(1)}" y="${(y+8).toFixed(1)}" width="12" height="2.6" fill="#3D2E24"/>
+   <rect x="${(x-6).toFixed(1)}" y="${(y+8).toFixed(1)}" width="${(12*st.soc).toFixed(1)}" height="2.6" fill="${st.soc>.34?"#E3A130":"#E05A4F"}"/>`;});
+
+ const p0=TOPO.barras[0].pos;
+ s+=`<g filter="url(#gl)"><rect x="${(X(p0)-8).toFixed(1)}" y="${(Y(p0)-8).toFixed(1)}" width="16" height="16"
+  fill="none" stroke="${S.n1?"#E05A4F":"#79C2D0"}" stroke-width="2"/></g>
+  <text x="${(X(p0)+13).toFixed(1)}" y="${(Y(p0)-9).toFixed(1)}" fill="#79C2D0" font-family="Barlow Condensed" font-size="12.5" letter-spacing="1.3">SE PORANGATU</text>`;
+ if(S.n1)s+=`<text x="${W-PAD}" y="${PAD}" text-anchor="end" fill="#E05A4F" font-family="Barlow Condensed"
+  font-size="14" letter-spacing="1.5">LD 138 kV SERRA DA MESA–PORANGATU C1 INDISPONÍVEL</text>`;
+ s+=`<g opacity=".5"><line x1="${PAD}" y1="${H-22}" x2="${PAD+10*kmPx}" y2="${H-22}" stroke="#54402F" stroke-width="1.5"/>
+  <text x="${PAD}" y="${H-28}" fill="#6E6154" font-family="IBM Plex Mono" font-size="9">10 km</text></g>`;
+ $("map").innerHTML=s;
+}
+
+function linhaDoTempo(){
+ const W=900,H=300,L=48,Rr=118,T=14,B=32;
+ const hs=DIA.horas, X=h=>L+(h/23)*(W-L-Rr);
+ const vLo=Math.min(0.74,Math.min(...hs.map(h=>h.vmin))-0.01), vHi=1.02;
+ const Yv=v=>T+(vHi-v)/(vHi-vLo)*(H-T-B);
+ const pMax=Math.max(...hs.map(h=>h.cargaMW))*1.12;
+ const Yp=p=>H-B-(p/pMax)*(H-T-B)*0.92;
+ let s="";
+ hs.forEach(h=>{if(h.disturbio)s+=`<rect x="${(X(h.hora)-((W-L-Rr)/46)).toFixed(1)}" y="${T}"
+   width="${((W-L-Rr)/23).toFixed(1)}" height="${H-T-B}" fill="#E05A4F" opacity=".07"/>`;});
+ [[0.93,"#6FBF73","adequada"],[0.90,"#E3A130","precária"]].forEach(([v,c,n])=>{
+  s+=`<line x1="${L}" y1="${Yv(v).toFixed(1)}" x2="${W-Rr}" y2="${Yv(v).toFixed(1)}" stroke="${c}" stroke-opacity=".45" stroke-width=".9" stroke-dasharray="3 3"/>
+   <text x="${W-Rr+7}" y="${(Yv(v)+3).toFixed(1)}" fill="${c}" opacity=".75" font-family="Barlow Condensed" font-size="10.5" letter-spacing=".8">${n.toUpperCase()} ${v.toFixed(2)}</text>`;});
+ for(let h=0;h<24;h+=3){s+=`<text x="${X(h).toFixed(1)}" y="${H-B+14}" text-anchor="middle" fill="#6E6154" font-family="IBM Plex Mono" font-size="9.5">${String(h).padStart(2,"0")}</text>`;}
+ // carga
+ s+=`<path d="${hs.map((h,i)=>(i?"L":"M")+X(h.hora).toFixed(1)+" "+Yp(h.cargaMW).toFixed(1)).join(" ")}"
+  fill="none" stroke="#54402F" stroke-width="1.4"/>`;
+ s+=`<text x="${W-Rr+7}" y="${Yp(hs[23].cargaMW).toFixed(1)}" fill="#A69582" font-family="IBM Plex Mono" font-size="9.5">carga MW</text>`;
+ // tensao minima
+ s+=`<path d="${hs.map((h,i)=>(i?"L":"M")+X(h.hora).toFixed(1)+" "+Yv(h.vmin).toFixed(1)).join(" ")}"
+  fill="none" stroke="#79C2D0" stroke-width="1.9"/>`;
+ hs.forEach(h=>{s+=`<circle cx="${X(h.hora).toFixed(1)}" cy="${Yv(h.vmin).toFixed(1)}" r="2.4"
+  fill="${COR[classificar(h.vmin)]}"><title>${String(h.hora).padStart(2,"0")}h · ${h.vmin.toFixed(4)} pu · ${h.cargaMW.toFixed(1)} MW · ${h.semTelemetria} pivôs sem telemetria</title></circle>`;});
+ // sites fora
+ hs.forEach(h=>{const n=h.popsMortos.length+h.erbsMortas.length;
+  if(n)s+=`<rect x="${(X(h.hora)-3).toFixed(1)}" y="${H-B-6}" width="6" height="${(n*4).toFixed(0)}" fill="#E05A4F" opacity=".8" transform="translate(0,${-(n*4)})">
+   <title>${String(h.hora).padStart(2,"0")}h · fora: ${[...h.popsMortos,...h.erbsMortas].join(", ")}</title></rect>`;});
+ s+=`<text x="${W-Rr+7}" y="${(Yv(hs[23].vmin)-8).toFixed(1)}" fill="#79C2D0" font-family="IBM Plex Mono" font-size="9.5">V mín pu</text>
+  <text x="${W-Rr+7}" y="${H-B-4}" fill="#E05A4F" font-family="IBM Plex Mono" font-size="9.5">sites fora</text>
+  <text x="${L}" y="${H-6}" fill="#6E6154" font-family="Barlow Condensed" font-size="10.5" letter-spacing="1.3">
+  PICO ${DIA.pico.cargaMW.toFixed(1)} MW ÀS ${String(DIA.pico.hora).padStart(2,"0")}H · PIOR TENSÃO ${DIA.pior.vmin.toFixed(4)} PU ÀS ${String(DIA.pior.hora).padStart(2,"0")}H</text>`;
+ $("dia").innerHTML=s;
+}
+
+/* ---------------- interacao do mapa ---------------- */
+function montarMapa(){
+ const box=document.getElementById("mapbox");
+ let arrastando=false,px=0,py=0,movimentou=false;
+ const inicio=e=>{arrastando=true;movimentou=false;px=e.clientX;py=e.clientY;
+   box.classList.add("arrastando");box.setPointerCapture(e.pointerId);};
+ const move=e=>{if(!arrastando)return;
+   const dx=e.clientX-px,dy=e.clientY-py;
+   if(Math.abs(dx)+Math.abs(dy)>2)movimentou=true;
+   px=e.clientX;py=e.clientY;VISTA.cx-=dx;VISTA.cy-=dy;mapa();};
+ const fim=e=>{arrastando=false;box.classList.remove("arrastando");
+   try{box.releasePointerCapture(e.pointerId)}catch{}};
+ box.addEventListener("pointerdown",inicio);
+ box.addEventListener("pointermove",move);
+ box.addEventListener("pointerup",fim);
+ box.addEventListener("pointercancel",fim);
+
+ box.addEventListener("wheel",e=>{
+   e.preventDefault();
+   const r=box.getBoundingClientRect();
+   zoomEm(e.deltaY<0?1:-1, e.clientX-r.left, e.clientY-r.top);
+ },{passive:false});
+
+ // pinca de dois dedos
+ let d0=null;
+ box.addEventListener("touchmove",e=>{
+   if(e.touches.length!==2)return;
+   e.preventDefault();
+   const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,
+                      e.touches[0].clientY-e.touches[1].clientY);
+   if(d0===null){d0=d;return;}
+   if(d/d0>1.35){zoomEm(1);d0=d;} else if(d/d0<0.74){zoomEm(-1);d0=d;}
+ },{passive:false});
+ box.addEventListener("touchend",()=>{d0=null;});
+
+ document.getElementById("z_mais").addEventListener("click",()=>zoomEm(1));
+ document.getElementById("z_menos").addEventListener("click",()=>zoomEm(-1));
+ document.getElementById("z_fit").addEventListener("click",()=>{enquadrar();mapa();});
+ ["escuro","satelite","nenhum"].forEach(b=>{
+  document.getElementById("bs_"+b).addEventListener("click",()=>{
+   VISTA.base=b;
+   ["escuro","satelite","nenhum"].forEach(o=>
+     document.getElementById("bs_"+o).setAttribute("aria-pressed",String(o===b)));
+   if(VISTA.z>BASES[b].zmax){VISTA.cx/=Math.pow(2,VISTA.z-BASES[b].zmax);
+     VISTA.cy/=Math.pow(2,VISTA.z-BASES[b].zmax);VISTA.z=BASES[b].zmax;}
+   mapa();});
+ });
+
+ if(window.ResizeObserver){
+  let t=null;
+  new ResizeObserver(()=>{clearTimeout(t);t=setTimeout(()=>{if(R)mapa();},120);}).observe(box);
+ }
+}
+function zoomEm(d,ax,ay){
+ const {W,H}=dims();
+ const z2=Math.min(BASES[VISTA.base].zmax,Math.max(3,VISTA.z+d));
+ if(z2===VISTA.z)return;
+ const k=Math.pow(2,z2-VISTA.z);
+ const px=(ax===undefined?W/2:ax), py=(ay===undefined?H/2:ay);
+ // mantem o ponto sob o cursor fixo na tela
+ const mx=VISTA.cx-W/2+px, my=VISTA.cy-H/2+py;
+ VISTA.cx=mx*k-px+W/2; VISTA.cy=my*k-py+H/2; VISTA.z=z2;
+ mapa();
+}
+
+(async()=>{TOPO=await fetch("/api/topologia").then(r=>r.json());montarCtl();montarMapa();await rodar();})();
+</script>
+</body>
+</html>
